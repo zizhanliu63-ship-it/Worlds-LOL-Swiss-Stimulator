@@ -1,0 +1,2901 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>瑞士轮赛制模拟器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 100vw;
+            height: 100vh;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 24px;
+            font-weight: 400;
+            flex-shrink: 0;
+        }
+
+        .phase-indicator {
+            text-align: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+
+        .phase-indicator h2 {
+            color: #2c3e50;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .season-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        /* 主布局 - 四列 */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 3fr 8fr 6fr;
+            gap: 12px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+        }
+
+        .panel {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .panel h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f0f0;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 0;
+        }
+
+        /* 按钮样式 - 经典配色 */
+        .control-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background-color: #2196F3;
+            color: white;
+        }
+
+        .btn-success {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .btn-warning {
+            background-color: #FF9800;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* 队伍信息面板 - 战力排行榜 */
+        .power-ranking-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .power-ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background: #fafafa;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .power-ranking-item.top-rank {
+            background: #fff8e1;
+            border-left: 3px solid #FFD700;
+        }
+
+        .rank-number {
+            font-weight: 600;
+            color: #666;
+            min-width: 20px;
+        }
+
+        .team-name-with-champion {
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .champion-star {
+            color: #FFD700;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .runner-up-star {
+            color: #C0C0C0;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .power-value {
+            font-weight: 600;
+            color: #2196F3;
+        }
+
+        /* 准备阶段输入 */
+        .team-input-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .team-input-item {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .team-input-item label {
+            min-width: 50px;
+            font-weight: 500;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .team-input-item input[type="text"] {
+            flex: 1;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            min-width: 0;
+        }
+
+        .team-input-item input[type="text"]:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+
+        .team-input-item input[type="number"] {
+            width: 65px;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .team-input-item input[type="number"]:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+
+        /* 赛程面板 */
+        .match-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .match-card {
+            background: #fafafa;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 3px solid #2196F3;
+        }
+
+        .match-card.winner-team1 {
+            border-left-color: #4CAF50;
+            background: #f1f8f4;
+        }
+
+        .match-card.winner-team2 {
+            border-left-color: #f44336;
+            background: #fef5f5;
+        }
+
+        .match-teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .match-team {
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .match-vs {
+            color: #999;
+            font-size: 11px;
+        }
+
+        .match-stats {
+            font-size: 10px;
+            color: #666;
+            margin-top: 4px;
+            padding-top: 4px;
+            border-top: 1px solid #e8e8e8;
+        }
+
+        .match-prediction {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4px;
+            font-size: 10px;
+        }
+
+        .prediction-bar {
+            flex: 1;
+            height: 4px;
+            background: #f0f0f0;
+            border-radius: 2px;
+            margin: 0 4px;
+            overflow: hidden;
+        }
+
+        .prediction-fill {
+            height: 100%;
+            background: #2196F3;
+            transition: width 0.3s;
+        }
+
+        .match-record {
+            font-size: 10px;
+            color: #888;
+        }
+
+        .match-result {
+            margin-top: 4px;
+            font-weight: 600;
+            font-size: 11px;
+        }
+
+        /* 赛况面板 - 主面板 */
+        .current-match-header {
+            background: #2196F3;
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 14px;
+            color: white;
+        }
+
+        .match-id-display {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            opacity: 0.9;
+            letter-spacing: 2px;
+        }
+
+        .match-teams-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .team-name-left {
+            flex: 1;
+            text-align: left;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .vs-text {
+            flex: 0 0 auto;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 0 15px;
+            opacity: 0.8;
+        }
+
+        .team-name-right {
+            flex: 1;
+            text-align: right;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .score-display-large {
+            text-align: center;
+            font-size: 36px;
+            font-weight: 300;
+            letter-spacing: 6px;
+        }
+
+        .game-detail-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .game-detail-card {
+            background: #fafafa;
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .game-detail-card.upset {
+            border: 2px solid #FF9800;
+            background: #fffef5;
+        }
+
+        .game-detail-card.defense-mode {
+            border: 2px solid #9C27B0;
+            background: #faf5ff;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .game-number {
+            font-weight: 600;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .game-score-display {
+            font-weight: 600;
+            font-size: 14px;
+            color: #2196F3;
+        }
+
+        .upset-badge {
+            background: #FF9800;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .defense-badge {
+            background: #9C27B0;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .game-teams-comparison {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .team-power-detail {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .team-power-detail.left {
+            text-align: right;
+        }
+
+        .team-power-detail.right {
+            text-align: left;
+        }
+
+        .team-name-power {
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 2px;
+        }
+
+        .power-breakdown {
+            font-size: 10px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .power-breakdown span {
+            display: block;
+        }
+
+        .vs-divider {
+            font-weight: 600;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .power-bar-container {
+            margin-top: 10px;
+        }
+
+        .power-bar-modern {
+            height: 24px;
+            background: #f0f0f0;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .power-fill-blue {
+            background: #2196F3;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 11px;
+        }
+
+        .power-fill-red {
+            background: #f44336;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 11px;
+        }
+
+        .game-winner-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .game-winner-indicator {
+            text-align: center;
+            padding: 5px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 11px;
+        }
+
+        .game-winner-indicator.winner {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .game-winner-indicator.loser {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .game-badges {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+            justify-content: flex-end;
+        }
+
+        .team-power-detail.right .game-badges {
+            justify-content: flex-start;
+        }
+
+        /* 数据分析区域 */
+        .analytics-section {
+            margin-top: 15px;
+            padding-top: 12px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .analytics-section h4 {
+            font-size: 13px;
+            margin-bottom: 10px;
+            color: #2196F3;
+            font-weight: 600;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .analytics-card {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e8e8e8;
+            text-align: center;
+        }
+
+        .analytics-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2196F3;
+            margin-bottom: 3px;
+        }
+
+        .analytics-label {
+            font-size: 10px;
+            color: #888;
+        }
+
+        /* 结果面板 */
+        .result-section {
+            margin-bottom: 10px;
+        }
+
+        .result-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .result-column-title {
+            text-align: center;
+            padding: 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: white;
+        }
+
+        .result-column-title.qualified {
+            background: #4CAF50;
+        }
+
+        .result-column-title.playoffs {
+            background: #9C27B0;
+        }
+
+        .result-column-title.undecided {
+            background: #2196F3;
+        }
+
+        .result-column-title.eliminated {
+            background: #f44336;
+        }
+
+        .result-team-item {
+            padding: 8px;
+            margin: 4px 0;
+            border-radius: 6px;
+            background: #fafafa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-team-item.qualified {
+            background: #f1f8f4;
+            border-left: 3px solid #4CAF50;
+        }
+
+        .result-team-item.playoffs {
+            background: #f3e5f5;
+            border-left: 3px solid #9C27B0;
+        }
+
+        .result-team-item.eliminated {
+            background: #fef5f5;
+            border-left: 3px solid #f44336;
+        }
+
+        .result-team-name {
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .result-team-record {
+            font-size: 11px;
+            font-weight: 500;
+            color: #666;
+        }
+
+        .result-team-item.qualified .result-team-record {
+            color: #2e7d32;
+        }
+
+        .result-team-item.playoffs .result-team-record {
+            color: #7b1fa2;
+        }
+
+        .result-team-item.eliminated .result-team-record {
+            color: #c62828;
+        }
+
+        /* 历史面板 */
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .history-header h3 {
+            margin: 0;
+            border: none;
+            padding: 0;
+        }
+
+        .history-pagination {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .page-btn {
+            padding: 3px 8px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background: #f0f0f0;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .history-match-card {
+            background: #fafafa;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .history-season-tag {
+            display: inline-block;
+            background: #FFD700;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .history-match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .history-match-number {
+            font-size: 10px;
+            color: #999;
+        }
+
+        .history-match-teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .history-team {
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .history-team.winner {
+            color: #2e7d32;
+        }
+
+        .history-team.loser {
+            color: #c62828;
+        }
+
+        .history-score {
+            font-weight: 600;
+            color: #2196F3;
+            font-size: 13px;
+        }
+
+        .history-games-summary {
+            font-size: 10px;
+            color: #888;
+            padding-top: 4px;
+            border-top: 1px solid #e8e8e8;
+        }
+
+        /* 队伍数据面板 - 表格形式 */
+        .team-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        .team-data-table thead th {
+            background: #f8f9fa;
+            padding: 8px 4px;
+            text-align: center;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 2px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+        }
+
+        .team-data-table tbody td {
+            padding: 8px 4px;
+            text-align: center;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .team-data-table tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .team-data-table tbody tr.top-rank {
+            background: #fff8e1;
+        }
+
+        .team-data-table tbody tr.top-rank:hover {
+            background: #fff3cd;
+        }
+
+        .status-message {
+            padding: 8px;
+            margin: 6px 0;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .status-message.info {
+            background: #f5f9ff;
+            color: #2196F3;
+        }
+
+        .status-message.success {
+            background: #f1f8f4;
+            color: #2e7d32;
+        }
+
+        .status-message.warning {
+            background: #fff8e1;
+            color: #f57c00;
+        }
+
+        /* 滚动条样式 */
+        .panel-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .panel-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .panel-content::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+
+        .panel-content::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>瑞士轮赛制模拟器</h1>
+
+        <div class="phase-indicator">
+            <h2>
+                <span id="currentPhase">准备阶段</span>
+                <span class="season-badge" id="seasonBadge">第1赛季</span>
+            </h2>
+        </div>
+
+        <div class="main-layout">
+            <!-- 第一列：操作面板 (1单位) -->
+            <div class="column">
+                <div class="panel" style="flex: 1;">
+                    <h3>操作面板</h3>
+                    <div class="panel-content">
+                        <div class="control-buttons">
+                            <button class="btn btn-primary" id="confirmBtn" onclick="handleConfirm()">确认</button>
+                            <button class="btn btn-success" id="startMatchBtn" onclick="startNextMatch()" disabled>进行下一场比赛</button>
+                            <button class="btn btn-warning" id="nextPhaseBtn" onclick="startNextPhase()" disabled>进入下一阶段</button>
+                            <button class="btn btn-danger" id="endSeasonBtn" onclick="endSeason()" disabled>结束赛季</button>
+                        </div>
+                        <div id="operationStatus"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第二列：队伍信息 (3单位) + 赛程 (5单位) -->
+            <div class="column">
+                <div class="panel" style="flex: 3;">
+                    <h3>实时基础战力排行榜</h3>
+                    <div class="panel-content" id="teamContent">
+                        <div class="team-input-list" id="teamInputList"></div>
+                    </div>
+                </div>
+
+                <div class="panel" style="flex: 5;">
+                    <h3>赛程面板</h3>
+                    <div class="panel-content" id="scheduleContent">
+                        <p class="status-message info">等待分组...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第三列：赛况面板 (8单位) -->
+            <div class="column">
+                <div class="panel" style="flex: 8;">
+                    <h3>赛况面板</h3>
+                    <div class="panel-content" id="matchContent">
+                        <p class="status-message info">等待比赛开始...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第四列：结果 (6单位) + 队伍数据 (新增) + 历史 (5单位) -->
+            <div class="column">
+                <div class="panel" style="flex: 6;">
+                    <h3>结果面板</h3>
+                    <div class="panel-content">
+                        <!-- A阶段显示 -->
+                        <div id="phaseAResults">
+                            <div class="result-section">
+                                <div class="result-column-title qualified" id="qualifiedTitle">已晋级 (3胜)</div>
+                                <div id="qualifiedTeams"></div>
+                            </div>
+                            <div class="result-section">
+                                <div class="result-column-title undecided">未确定</div>
+                                <div id="undecidedTeams"></div>
+                            </div>
+                            <div class="result-section">
+                                <div class="result-column-title eliminated">已淘汰 (3败)</div>
+                                <div id="eliminatedTeams"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- B阶段显示 - 1-1-2-4-8布局 -->
+                        <div id="phaseBResults" style="display: none;">
+                            <div class="result-section" id="championSection">
+                                <div class="result-column-title qualified" id="championTitle">冠军</div>
+                                <div id="championTeams"></div>
+                            </div>
+                            <div class="result-section" id="runnerUpSection">
+                                <div class="result-column-title playoffs">亚军</div>
+                                <div id="runnerUpTeams"></div>
+                            </div>
+                            <div class="result-section" id="top4Section">
+                                <div class="result-column-title undecided">四强</div>
+                                <div id="top4Teams"></div>
+                            </div>
+                            <div class="result-section" id="top8Section">
+                                <div class="result-column-title eliminated">八强</div>
+                                <div id="top8Teams"></div>
+                            </div>
+                            <div class="result-section" id="top16Section">
+                                <div class="result-column-title eliminated">十六强</div>
+                                <div id="top16Teams"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel" style="flex: 5;">
+                    <h3>队伍数据</h3>
+                    <div class="panel-content" id="teamDataContent">
+                        <p class="status-message info">等待比赛数据...</p>
+                    </div>
+                </div>
+
+                <div class="panel" style="flex: 5;">
+                    <div class="history-header">
+                        <h3>历史战绩</h3>
+                        <div class="history-pagination" id="historyPagination" style="display: none;">
+                            <button class="page-btn" id="prevPageBtn" onclick="changeHistoryPage(-1)">上一页</button>
+                            <span class="page-info" id="pageInfo">1/1</span>
+                            <button class="page-btn" id="nextPageBtn" onclick="changeHistoryPage(1)">下一页</button>
+                        </div>
+                    </div>
+                    <div class="panel-content" id="historyContent">
+                        <p class="status-message info">暂无比赛记录</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 游戏状态
+        const GameState = {
+            PREPARATION: 'preparation',
+            GROUPING: 'grouping',
+            MATCH: 'match',
+            RESULT: 'result'
+        };
+
+        const PhaseType = {
+            PHASE_A: 'phaseA',  // 16进8
+            PHASE_B: 'phaseB'   // 8进1
+        };
+
+        let currentState = GameState.PREPARATION;
+        let currentPhase = PhaseType.PHASE_A;
+        let currentSeason = 1;
+        let teams = [];
+        let matches = [];
+        let currentMatch = null;
+        let completedMatches = [];
+        // 每个赛季的独立计数器
+        let seasonMatchCounters = {}; // {seasonNumber: counter}
+        
+        // 历史分页
+        let historyCurrentPage = 1;
+        const historyPageSize = 5;
+        
+        // 所有赛季的历史比赛记录（跨赛季保留）
+        let allSeasonMatches = [];
+
+        // 初始化队伍
+        function initTeams() {
+            const defaultTeams = [
+                { name: 'BLG', power: 1500 },
+                { name: 'AL', power: 1400 },
+                { name: 'WBG', power: 1350 },
+                { name: 'JDG', power: 1450 },
+                { name: 'IG', power: 1250 },
+                { name: 'TES', power: 1200 },
+                { name: 'NIP', power: 1150 },
+                { name: 'WE', power: 1125 },
+                { name: 'LNG', power: 1075 },
+                { name: 'FPX', power: 1000 },
+                { name: 'EDG', power: 1025 },
+                { name: 'RNG', power: 975 },
+                { name: 'OMG', power: 1050 },
+                { name: 'TT', power: 1000 },
+                { name: 'RA', power: 950 },
+                { name: 'UP', power: 975 }
+            ];
+
+            const container = document.getElementById('teamInputList');
+            container.innerHTML = '';
+
+            defaultTeams.forEach((team, index) => {
+                const item = document.createElement('div');
+                item.className = 'team-input-item';
+                item.innerHTML = `
+                    <label>队伍${index + 1}:</label>
+                    <input type="text" id="teamName${index}" value="${team.name}" placeholder="队名">
+                    <input type="number" id="teamPower${index}" value="${team.power}" placeholder="战力">
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // 获取队伍数据
+        function getTeamsFromInput() {
+            const newTeams = [];
+            for (let i = 0; i < 16; i++) {
+                const nameInput = document.getElementById(`teamName${i}`);
+                const powerInput = document.getElementById(`teamPower${i}`);
+                
+                if (!nameInput || !powerInput) continue;
+                
+                const name = nameInput.value.trim();
+                const power = parseInt(powerInput.value);
+
+                if (!name) {
+                    alert(`队伍 ${i + 1} 的名称不能为空`);
+                    return null;
+                }
+
+                if (isNaN(power)) {
+                    alert(`队伍 ${name} 的战力值必须是有效数字`);
+                    return null;
+                }
+
+                newTeams.push({
+                    id: i,
+                    name: name,
+                    basePower: power,
+                    wins: 0,
+                    losses: 0,
+                    qualified: false,
+                    eliminated: false,
+                    championCount: 0,
+                    runnerUpCount: 0,
+                    top4Count: 0,
+                    top8Count: 0,
+                    top16Count: 0,
+                    championSeasons: [], // 记录获得冠军的赛季
+                    runnerUpSeasons: [], // 记录获得亚军的赛季
+                    totalGames: 0,
+                    totalWins: 0,
+                    totalMatches: 0,
+                    matchWins: 0,
+                    upsetsWon: 0,
+                    upsetsLost: 0,
+                    highestPower: power,
+                    seasonHighestPower: power,
+                    lowestPower: power,
+                    powerHistory: [power],
+                    defenseModeActive: false,
+                    defenseModeBonus: 0,
+                    upsetBonus: 0,
+                    // 历史累计统计（跨赛季）
+                    historicalTotalGames: 0,
+                    historicalTotalWins: 0,
+                    historicalTotalMatches: 0,
+                    historicalMatchWins: 0,
+                    historicalUpsetsWon: 0
+                });
+            }
+            
+            if (newTeams.length !== 16) {
+                alert('请填写完整的16支队伍信息');
+                return null;
+            }
+            
+            return newTeams;
+        }
+
+        // 处理确认按钮
+        function handleConfirm() {
+            switch (currentState) {
+                case GameState.PREPARATION:
+                    confirmPreparation();
+                    break;
+                case GameState.GROUPING:
+                    confirmGrouping();
+                    break;
+            }
+        }
+
+        // 确认准备阶段
+        function confirmPreparation() {
+            const newTeams = getTeamsFromInput();
+            if (!newTeams) return;
+
+            teams = newTeams;
+            currentState = GameState.GROUPING;
+
+            updateTeamPanelToDisplay();
+
+            updatePhaseDisplay();
+            updateOperationStatus('已进入分组阶段，请点击确认进行随机分组');
+            generateRandomMatches();
+        }
+
+        // 更新队伍面板为显示模式（战力排行榜）
+        function updateTeamPanelToDisplay() {
+            updatePowerRanking();
+        }
+
+        // 生成随机匹配
+        function generateRandomMatches() {
+            const shuffled = [...teams].sort(() => Math.random() - 0.5);
+            matches = [];
+
+            for (let i = 0; i < shuffled.length; i += 2) {
+                if (i + 1 < shuffled.length) {
+                    matches.push({
+                        team1: shuffled[i],
+                        team2: shuffled[i + 1],
+                        games: [],
+                        currentGame: 0,
+                        team1Score: 0,
+                        team2Score: 0,
+                        completed: false,
+                        winner: null,
+                        phase: currentPhase
+                    });
+                }
+            }
+
+            updateSchedulePanel();
+        }
+
+        // 确认分组
+        function confirmGrouping() {
+            currentState = GameState.MATCH;
+            updatePhaseDisplay();
+            const phaseLabel = currentPhase === PhaseType.PHASE_A ? '阶段A第一轮' : '阶段B半决赛';
+            updateOperationStatus(`比赛开始！接下来是${phaseLabel}，点击"进行下一场比赛"开始`);
+            document.getElementById('startMatchBtn').disabled = false;
+            document.getElementById('confirmBtn').disabled = true;
+            document.getElementById('nextPhaseBtn').disabled = true;
+            updateResultPanel();
+        }
+
+        // 更新阶段显示
+        function updatePhaseDisplay() {
+            const phaseNames = {
+                [GameState.PREPARATION]: '准备阶段',
+                [GameState.GROUPING]: '分组阶段',
+                [GameState.MATCH]: currentPhase === PhaseType.PHASE_A ? '阶段A - 瑞士轮 (16进8)' : '阶段B - 淘汰赛 (8进1)',
+                [GameState.RESULT]: '结果阶段'
+            };
+            document.getElementById('currentPhase').textContent = phaseNames[currentState];
+            document.getElementById('seasonBadge').textContent = `第${currentSeason}赛季`;
+        }
+
+        // 更新操作状态
+        function updateOperationStatus(message) {
+            const statusEl = document.getElementById('operationStatus');
+            if (statusEl) {
+                statusEl.innerHTML = `<p class="status-message info">${message}</p>`;
+            }
+        }
+
+        // 获取两队历史交手记录（跨赛季统计）
+        function getHeadToHeadStats(team1, team2) {
+            const headToHead = allSeasonMatches.filter(m => 
+                m && m.team1 && m.team2 &&
+                ((m.team1.id === team1.id && m.team2.id === team2.id) ||
+                 (m.team1.id === team2.id && m.team2.id === team1.id))
+            );
+
+            if (headToHead.length === 0) {
+                return { total: 0, team1Wins: 0, team2Wins: 0 };
+            }
+
+            let team1Wins = 0;
+            let team2Wins = 0;
+
+            headToHead.forEach(match => {
+                if (match.winner) {
+                    if (match.winner.id === team1.id) {
+                        team1Wins++;
+                    } else {
+                        team2Wins++;
+                    }
+                }
+            });
+
+            return {
+                total: headToHead.length,
+                team1Wins: team1Wins,
+                team2Wins: team2Wins
+            };
+        }
+
+        // 计算预测胜率
+        function calculatePredictedWinRate(team1, team2) {
+            const totalPower = team1.basePower + team2.basePower;
+            if (totalPower === 0) return { team1Rate: '50.00', team2Rate: '50.00' };
+            
+            const team1Rate = (team1.basePower / totalPower * 100).toFixed(2);
+            const team2Rate = (team2.basePower / totalPower * 100).toFixed(2);
+            
+            return { team1Rate, team2Rate };
+        }
+
+        // 更新赛程面板
+        function updateSchedulePanel() {
+            const container = document.getElementById('scheduleContent');
+
+            if (!container) return;
+
+            if (matches.length === 0) {
+                container.innerHTML = '<p class="status-message info">等待分组...</p>';
+                return;
+            }
+
+            let html = '<div class="match-list">';
+
+            matches.forEach((match) => {
+                if (!match || !match.team1 || !match.team2) return;
+                
+                const statusClass = match.completed ?
+                    (match.winner === match.team1 ? 'winner-team1' : 'winner-team2') : '';
+
+                // 获取历史交手记录
+                const h2h = getHeadToHeadStats(match.team1, match.team2);
+                const h2hText = h2h.total > 0 ? 
+                    `历史交手: ${match.team1.name} ${h2h.team1Wins}胜 - ${h2h.team2Wins}胜 ${match.team2.name} (共${h2h.total}场)` :
+                    '历史交手: 首次对决';
+
+                // 计算预测胜率
+                const prediction = calculatePredictedWinRate(match.team1, match.team2);
+
+                html += `
+                    <div class="match-card ${statusClass}">
+                        <div class="match-teams">
+                            <span class="match-team">${match.team1.name}</span>
+                            <span class="match-vs">VS</span>
+                            <span class="match-team">${match.team2.name}</span>
+                        </div>
+                        <div class="match-record">
+                            ${match.team1.name}: ${match.team1.wins}胜${match.team1.losses}败 | 
+                            ${match.team2.name}: ${match.team2.wins}胜${match.team2.losses}败
+                        </div>
+                        <div class="match-stats">${h2hText}</div>
+                        <div class="match-prediction">
+                            <span>${prediction.team1Rate}%</span>
+                            <div class="prediction-bar">
+                                <div class="prediction-fill" style="width: ${prediction.team1Rate}%"></div>
+                            </div>
+                            <span>${prediction.team2Rate}%</span>
+                        </div>
+                        ${match.completed ?
+                            `<div class="match-result" style="color: ${match.winner === match.team1 ? '#2e7d32' : '#c62828'}">
+                                获胜: ${match.winner.name} (${match.team1Score}-${match.team2Score})
+                            </div>` :
+                            '<div style="margin-top: 6px; color: #2196F3; font-size: 12px;">待比赛</div>'
+                        }
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // 开始下一场比赛
+        function startNextMatch() {
+            const pendingMatch = matches.find(m => m && !m.completed);
+
+            if (!pendingMatch) {
+                const allCompleted = matches.length > 0 && matches.every(m => m && m.completed);
+                if (allCompleted) {
+                    checkRoundComplete();
+                }
+                return;
+            }
+
+            currentMatch = pendingMatch;
+            
+            // 为当前赛季初始化计数器（如果尚未初始化）
+            if (!seasonMatchCounters[currentSeason]) {
+                seasonMatchCounters[currentSeason] = 0;
+            }
+            
+            // 增加当前赛季的比赛计数
+            seasonMatchCounters[currentSeason]++;
+            currentMatch.matchNumber = seasonMatchCounters[currentSeason];
+            currentMatch.season = currentSeason;
+            currentMatch.currentGame = 0;
+            currentMatch.team1Score = 0;
+            currentMatch.team2Score = 0;
+            currentMatch.games = [];
+
+            // 禁用按钮，直到比赛结束
+            document.getElementById('startMatchBtn').disabled = true;
+
+            playNextGame();
+        }
+
+        // 进行下一小局
+        function playNextGame() {
+            if (!currentMatch) return;
+
+            // 检查大场是否结束
+            if (currentMatch.team1Score >= 3 || currentMatch.team2Score >= 3) {
+                completeCurrentMatch();
+                return;
+            }
+
+            const gameNumber = currentMatch.currentGame + 1;
+            currentMatch.currentGame = gameNumber;
+
+            // 计算战力
+            const team1Calc = calculateDetailedPower(currentMatch.team1, currentMatch.team2, gameNumber - 1);
+            const team2Calc = calculateDetailedPower(currentMatch.team2, currentMatch.team1, gameNumber - 1);
+
+            const totalPower = team1Calc.finalPower + team2Calc.finalPower;
+            
+            if (totalPower === 0) {
+                console.error('Total power is zero!');
+                return;
+            }
+            
+            const team1WinRate = (team1Calc.finalPower / totalPower * 100).toFixed(2);
+            const team2WinRate = (team2Calc.finalPower / totalPower * 100).toFixed(2);
+
+            // 根据胜率决定胜负
+            const random = Math.random() * 100;
+            const team1Wins = random < parseFloat(team1WinRate);
+
+            const gameResult = {
+                gameNumber: gameNumber,
+                team1BasePower: team1Calc.basePower,
+                team2BasePower: team2Calc.basePower,
+                team1BonusPower: team1Calc.bonusPower,
+                team2BonusPower: team2Calc.bonusPower,
+                team1BonusPercent: team1Calc.bonusPercent,
+                team2BonusPercent: team2Calc.bonusPercent,
+                team1FinalPower: team1Calc.finalPower,
+                team2FinalPower: team2Calc.finalPower,
+                team1WinRate: team1WinRate,
+                team2WinRate: team2WinRate,
+                winner: team1Wins ? currentMatch.team1 : currentMatch.team2,
+                isUpset: false,
+                team1DefenseMode: team1Calc.defenseMode,
+                team2DefenseMode: team2Calc.defenseMode,
+                team1WinBonusPercent: team1Calc.winBonusPercent,
+                team2WinBonusPercent: team2Calc.winBonusPercent,
+                team1DefenseBonusPercent: team1Calc.defenseBonusPercent,
+                team2DefenseBonusPercent: team2Calc.defenseBonusPercent,
+                team1UpsetBonusPercent: team1Calc.upsetBonusPercent,
+                team2UpsetBonusPercent: team2Calc.upsetBonusPercent,
+                team1Breakdown: team1Calc.breakdown,
+                team2Breakdown: team2Calc.breakdown,
+                currentScore: `${currentMatch.team1Score}-${currentMatch.team2Score}`
+            };
+
+            // 判断是否以弱胜强
+            if (team1Wins && parseFloat(team1WinRate) < 50) {
+                gameResult.isUpset = true;
+            } else if (!team1Wins && parseFloat(team2WinRate) < 50) {
+                gameResult.isUpset = true;
+            }
+
+            if (!currentMatch.games) {
+                currentMatch.games = [];
+            }
+            currentMatch.games.push(gameResult);
+
+            if (team1Wins) {
+                currentMatch.team1Score++;
+            } else {
+                currentMatch.team2Score++;
+            }
+
+            // 更新小局统计数据（当前赛季）
+            currentMatch.team1.totalGames++;
+            currentMatch.team2.totalGames++;
+            if (team1Wins) {
+                currentMatch.team1.totalWins++;
+            } else {
+                currentMatch.team2.totalWins++;
+            }
+            
+            // 更新历史累计统计（跨赛季）
+            currentMatch.team1.historicalTotalGames++;
+            currentMatch.team2.historicalTotalGames++;
+            if (team1Wins) {
+                currentMatch.team1.historicalTotalWins++;
+            } else {
+                currentMatch.team2.historicalTotalWins++;
+            }
+            
+            if (gameResult.isUpset) {
+                if (team1Wins) {
+                    currentMatch.team1.upsetsWon++;
+                    currentMatch.team1.historicalUpsetsWon++;
+                    currentMatch.team2.upsetsLost++;
+                    // 为以弱胜强方添加5%额外增益标记
+                    currentMatch.team1.upsetBonus = 5;
+                } else {
+                    currentMatch.team2.upsetsWon++;
+                    currentMatch.team2.historicalUpsetsWon++;
+                    currentMatch.team1.upsetsLost++;
+                    // 为以弱胜强方添加5%额外增益标记
+                    currentMatch.team2.upsetBonus = 5;
+                }
+            }
+
+            // 每小局结束后立即更新基础战力
+            updateTeamPowerAfterSmallGame(team1Wins ? currentMatch.team1 : currentMatch.team2, 
+                                          team1Wins ? currentMatch.team2 : currentMatch.team1,
+                                          gameResult);
+
+            updateMatchPanel();
+            updatePowerRanking();
+            updateTeamDataPanel();
+
+            // 自动继续下一局
+            setTimeout(() => {
+                if (currentMatch && currentMatch.team1Score < 3 && currentMatch.team2Score < 3) {
+                    playNextGame();
+                } else {
+                    completeCurrentMatch();
+                }
+            }, 1500);
+        }
+
+        // 小局结束后更新战力 - 新规则版本
+        function updateTeamPowerAfterSmallGame(winner, loser, gameResult) {
+            // 小局获胜方：+1基础战力
+            winner.basePower += 1;
+
+            // 小局以弱胜强获胜：额外+1基础战力
+            if (gameResult.isUpset) {
+                winner.basePower += 1;
+            }
+
+            // 小局失败方：100%几率-1基础战力
+            loser.basePower -= 1;
+
+            // 被以弱胜强：额外-1基础战力
+            if (gameResult.isUpset) {
+                loser.basePower -= 1;
+            }
+
+            // 守备模式下大场获胜的额外奖励在大场结束时处理
+
+            // 更新最高/最低战力记录和历史最高/最低
+            [winner, loser].forEach(team => {
+                // 更新历史最高战力
+                if (team.basePower > team.highestPower) {
+                    team.highestPower = team.basePower;
+                }
+                // 更新历史最低战力
+                if (team.basePower < team.lowestPower) {
+                    team.lowestPower = team.basePower;
+                }
+                // 更新赛季最高战力
+                if (!team.seasonHighestPower || team.basePower > team.seasonHighestPower) {
+                    team.seasonHighestPower = team.basePower;
+                }
+                // 记录战力历史
+                team.powerHistory.push(team.basePower);
+            });
+        }
+
+        // 详细计算小局战力 - 新规则版本
+        function calculateDetailedPower(team, opponent, previousGamesCount) {
+            // 常量定义
+            const DEFENSE_MODE_INITIAL_BONUS = 15;  // 守备模式初始增益百分比
+            const DEFENSE_MODE_DECAY_MIN = 3;       // 守备模式最小衰减百分比
+            const DEFENSE_MODE_DECAY_MAX = 5;       // 守备模式最大衰减百分比
+            const WIN_BONUS_MIN = 5;                // 小局获胜增益最小百分比
+            const WIN_BONUS_MAX = 10;               // 小局获胜增益最大百分比
+            const UPSET_EXTRA_PERCENT = 5;          // 以弱胜强额外增益百分比
+
+            if (!team || !opponent) {
+                return { 
+                    basePower: 1000, 
+                    bonusPower: 0, 
+                    bonusPercent: '0.00', 
+                    finalPower: 1000, 
+                    defenseMode: false,
+                    winBonusPercent: 0,
+                    defenseBonusPercent: 0,
+                    upsetBonusPercent: 0,
+                    breakdown: []
+                };
+            }
+            
+            let basePower = team.basePower || 1000;
+            let bonusPower = 0;
+            let bonusPercent = 0;
+            let defenseMode = false;
+            let winBonusPercent = 0;
+            let defenseBonusPercent = 0;
+            let upsetBonusPercent = 0;
+            let breakdown = []; // 用于显示各项增益的明细
+
+            // 1. 小局获胜增益：如果前一小局获胜，获得5%-10%加成
+            if (previousGamesCount > 0 && currentMatch && currentMatch.games) {
+                const lastGame = currentMatch.games[previousGamesCount - 1];
+                if (lastGame && lastGame.winner && lastGame.winner.id === team.id) {
+                    winBonusPercent = WIN_BONUS_MIN + Math.floor(Math.random() * (WIN_BONUS_MAX - WIN_BONUS_MIN + 1));
+                    const winBonusPower = Math.round(basePower * winBonusPercent / 100);
+                    bonusPower += winBonusPower;
+                    bonusPercent += winBonusPercent;
+                    breakdown.push({ label: '小局获胜增益', percent: winBonusPercent, power: winBonusPower });
+                }
+            }
+
+            // 2. 以弱胜强额外增益：如果本队在本大场中曾经以弱胜强，获得5%额外加成
+            if (team.upsetBonus > 0) {
+                upsetBonusPercent = UPSET_EXTRA_PERCENT;
+                const upsetBonusPower = Math.round(basePower * upsetBonusPercent / 100);
+                bonusPower += upsetBonusPower;
+                bonusPercent += upsetBonusPercent;
+                breakdown.push({ label: '以弱胜强增益', percent: upsetBonusPercent, power: upsetBonusPower });
+            }
+
+            // 3. 守备模式增益：只有在0:2时才触发，并持续到后面几个小局
+            if (currentMatch) {
+                const myScore = team.id === currentMatch.team1.id ?
+                    currentMatch.team1Score : currentMatch.team2Score;
+                const opponentScore = team.id === currentMatch.team1.id ?
+                    currentMatch.team2Score : currentMatch.team1Score;
+
+                // 只有在0:2时才触发守备模式
+                if (myScore === 0 && opponentScore === 2) {
+                    defenseMode = true;
+                    
+                    // 如果是首次进入守备模式，初始化15%增益
+                    if (!team.defenseModeActive) {
+                        team.defenseModeBonus = DEFENSE_MODE_INITIAL_BONUS;
+                        team.defenseModeActive = true;
+                    } else if (team.defenseModeBonus > 0) {
+                        // 已经在守备模式中，每小局后衰减3%-5%
+                        const decayPercent = DEFENSE_MODE_DECAY_MIN + Math.floor(Math.random() * (DEFENSE_MODE_DECAY_MAX - DEFENSE_MODE_DECAY_MIN + 1));
+                        team.defenseModeBonus = Math.max(0, team.defenseModeBonus - decayPercent);
+                    }
+                    
+                    defenseBonusPercent = team.defenseModeBonus;
+                    const defenseBonusPower = Math.round(basePower * defenseBonusPercent / 100);
+                    bonusPower += defenseBonusPower;
+                    bonusPercent += defenseBonusPercent;
+                    breakdown.push({ label: '守备模式增益', percent: defenseBonusPercent, power: defenseBonusPower, decay: true });
+                } else if (team.defenseModeActive && team.defenseModeBonus > 0) {
+                    // 曾经进入守备模式（0:2触发），现在比分已变化
+                    // 只要还有剩余增益，就继续衰减并应用，不管当前比分如何
+                    // 这样可以确保在第3、4、5局都能生效，直到增益衰减到0
+                    defenseMode = true;
+                    
+                    // 每小局后衰减3%-5%
+                    const decayPercent = DEFENSE_MODE_DECAY_MIN + Math.floor(Math.random() * (DEFENSE_MODE_DECAY_MAX - DEFENSE_MODE_DECAY_MIN + 1));
+                    team.defenseModeBonus = Math.max(0, team.defenseModeBonus - decayPercent);
+                    
+                    defenseBonusPercent = team.defenseModeBonus;
+                    const defenseBonusPower = Math.round(basePower * defenseBonusPercent / 100);
+                    bonusPower += defenseBonusPower;
+                    bonusPercent += defenseBonusPercent;
+                    breakdown.push({ label: '守备模式增益', percent: defenseBonusPercent, power: defenseBonusPower, decay: true });
+                    
+                    // 如果增益已衰减到0，重置守备模式标志
+                    if (team.defenseModeBonus <= 0) {
+                        team.defenseModeActive = false;
+                    }
+                }
+            }
+
+            // 计算最终战力：基础战力 + 所有增益
+            const finalPower = basePower + bonusPower;
+
+            return {
+                basePower: basePower,
+                bonusPower: bonusPower,
+                bonusPercent: Math.round(bonusPercent),
+                finalPower: finalPower,
+                defenseMode: defenseMode,
+                winBonusPercent: winBonusPercent,
+                defenseBonusPercent: defenseBonusPercent,
+                upsetBonusPercent: upsetBonusPercent,
+                breakdown: breakdown
+            };
+        }
+
+        // 完成当前大场
+        function completeCurrentMatch() {
+            if (!currentMatch) return;
+
+            currentMatch.completed = true;
+            currentMatch.winner = currentMatch.team1Score > currentMatch.team2Score ?
+                currentMatch.team1 : currentMatch.team2;
+            currentMatch.phase = currentPhase;
+
+            const winner = currentMatch.winner;
+            const loser = winner.id === currentMatch.team1.id ? currentMatch.team2 : currentMatch.team1;
+
+            if (winner) {
+                winner.wins++;
+            }
+            
+            if (loser) {
+                loser.losses++;
+            }
+
+            // B阶段特殊逻辑：败者淘汰
+            if (currentPhase === PhaseType.PHASE_B && loser) {
+                loser.eliminated = true;
+            }
+
+            // 更新大场统计数据（当前赛季）
+            currentMatch.team1.totalMatches++;
+            currentMatch.team2.totalMatches++;
+            if (winner) {
+                winner.matchWins++;
+            }
+            
+            // 更新历史累计统计（跨赛季）
+            currentMatch.team1.historicalTotalMatches++;
+            currentMatch.team2.historicalTotalMatches++;
+            if (winner) {
+                winner.historicalMatchWins++;
+            }
+
+            // 重置守备模式和以弱胜强增益
+            currentMatch.team1.defenseModeActive = false;
+            currentMatch.team1.defenseModeBonus = 0;
+            currentMatch.team1.upsetBonus = 0;
+            currentMatch.team2.defenseModeActive = false;
+            currentMatch.team2.defenseModeBonus = 0;
+            currentMatch.team2.upsetBonus = 0;
+
+            // 更新基础战力（仅处理守备模式奖励）
+            updateTeamPowerAfterMatch(winner, loser);
+
+            // 保存赛季信息
+            currentMatch.season = currentSeason;
+            const matchCopy = JSON.parse(JSON.stringify(currentMatch));
+            completedMatches.push(matchCopy);
+            allSeasonMatches.push(matchCopy); // 同时保存到全局历史记录
+
+            updateSchedulePanel();
+            updateResultPanel();
+            updateHistoryPanel();
+            updatePowerRanking();
+            updateTeamDataPanel();
+
+            // 检查是否还有未完成的比赛，如果有则重新启用按钮
+            const hasPending = matches.some(m => m && !m.completed);
+            if (hasPending) {
+                document.getElementById('startMatchBtn').disabled = false;
+            }
+
+            currentMatch = null;
+
+            // 检查本轮是否全部结束
+            setTimeout(() => {
+                if (matches.length > 0) {
+                    const allCompleted = matches.every(m => m && m.completed);
+                    if (allCompleted) {
+                        checkRoundComplete();
+                    }
+                }
+            }, 1000);
+        }
+
+        // 更新队伍战力（大场结束时调用，仅处理守备模式奖励）
+        function updateTeamPowerAfterMatch(winner, loser) {
+            if (!winner || !loser) return;
+
+            // 守备模式下大场获胜，额外+2基础战力
+            if (winner.defenseModeActive) {
+                winner.basePower += 2;
+                winner.defenseModeActive = false;
+
+                // 更新最高/最低战力记录
+                if (winner.basePower > winner.highestPower) {
+                    winner.highestPower = winner.basePower;
+                }
+                winner.powerHistory.push(winner.basePower);
+            }
+        }
+
+        // 安排下一轮比赛
+        function scheduleNextRound() {
+            matches = matches.filter(m => m && !m.completed);
+
+            if (currentPhase === PhaseType.PHASE_A) {
+                // 阶段A：瑞士轮（16进8），按战绩分组配对
+                const activeTeams = teams.filter(t => t && !t.qualified && !t.eliminated);
+
+                if (activeTeams.length === 0) {
+                    // 阶段A结束，等待用户点击"进入下一阶段"按钮
+                    updateOperationStatus('阶段A比赛全部结束！请点击"进入下一阶段"开始阶段B');
+                    document.getElementById('nextPhaseBtn').disabled = false;
+                    document.getElementById('startMatchBtn').disabled = true;
+                    return;
+                }
+
+                // 按战绩分组
+                const recordGroups = {};
+                activeTeams.forEach(team => {
+                    if (!team) return;
+                    const record = `${team.wins}-${team.losses}`;
+                    if (!recordGroups[record]) {
+                        recordGroups[record] = [];
+                    }
+                    recordGroups[record].push(team);
+                });
+
+                // 为每个战绩组生成匹配
+                let newMatches = [];
+                Object.values(recordGroups).forEach(group => {
+                    if (group && group.length >= 2) {
+                        const shuffled = [...group].sort(() => Math.random() - 0.5);
+                        for (let i = 0; i < shuffled.length; i += 2) {
+                            if (i + 1 < shuffled.length && shuffled[i] && shuffled[i + 1]) {
+                                newMatches.push({
+                                    team1: shuffled[i],
+                                    team2: shuffled[i + 1],
+                                    games: [],
+                                    currentGame: 0,
+                                    team1Score: 0,
+                                    team2Score: 0,
+                                    completed: false,
+                                    winner: null,
+                                    phase: currentPhase
+                                });
+                            }
+                        }
+                    }
+                });
+
+                matches = newMatches;
+
+                if (matches.length > 0) {
+                    updateSchedulePanel();
+                    const roundNum = matches[0].team1.wins + matches[0].team1.losses + 1;
+                    updateOperationStatus(`阶段A第${roundNum}轮抽签完成！共${matches.length}场比赛，点击"进行下一场比赛"继续`);
+                    document.getElementById('startMatchBtn').disabled = false;
+                    document.getElementById('nextPhaseBtn').disabled = true;
+                }
+            }
+        }
+
+        // 开始阶段B（8进4进2进1淘汰赛）
+        function startPhaseB() {
+            currentPhase = PhaseType.PHASE_B;
+            updatePhaseDisplay();
+
+            // 获取A阶段晋级的8支队伍（恰好3胜的队伍）
+            const qualifiedTeams = teams.filter(t => t.wins === 3 && !t.eliminated);
+            
+            if (qualifiedTeams.length !== 8) {
+                alert(`错误：应该有8支队伍晋级B阶段，但实际只有${qualifiedTeams.length}支`);
+                return;
+            }
+
+            // 标记已晋级阶段B的队伍
+            qualifiedTeams.forEach(t => {
+                t.qualified = true;
+                t.eliminated = false; // 重置淘汰状态，B阶段重新开始
+            });
+
+            // 随机配对：8支队伍分成4场四分之一决赛
+            const shuffled = [...qualifiedTeams].sort(() => Math.random() - 0.5);
+
+            matches = [];
+            for (let i = 0; i < shuffled.length; i += 2) {
+                if (i + 1 < shuffled.length) {
+                    matches.push({
+                        team1: shuffled[i],
+                        team2: shuffled[i + 1],
+                        games: [],
+                        currentGame: 0,
+                        team1Score: 0,
+                        team2Score: 0,
+                        completed: false,
+                        winner: null,
+                        phase: PhaseType.PHASE_B,
+                        round: 1 // 第1轮：四分之一决赛
+                    });
+                }
+            }
+
+            updateResultPanel();
+            updateSchedulePanel();
+            updateOperationStatus('阶段A结束！进入阶段B四分之一决赛（8进4），点击"进行下一场比赛"开始');
+            document.getElementById('startMatchBtn').disabled = false;
+            document.getElementById('nextPhaseBtn').disabled = true;
+            document.getElementById('endSeasonBtn').disabled = true; // B阶段未结束前不能结束赛季
+        }
+
+        // 手动进入下一阶段
+        function startNextPhase() {
+            if (currentPhase === PhaseType.PHASE_A) {
+                // 检查是否所有队伍都已完成阶段A（8支恰好3胜的队伍晋级）
+                const qualifiedTeams = teams.filter(t => t.wins === 3 && !t.eliminated);
+                if (qualifiedTeams.length < 8) {
+                    alert(`阶段A尚未完成，当前只有${qualifiedTeams.length}支队伍晋级，需要8支队伍才能进入阶段B`);
+                    return;
+                }
+                // 执行从A到B的转换
+                startPhaseB();
+            } else if (currentPhase === PhaseType.PHASE_B) {
+                // 阶段B已经完成，提示结束赛季
+                updateOperationStatus('阶段B已结束，请点击"结束赛季"查看最终结果');
+            }
+        }
+
+        // 检查轮次是否完成
+        function checkRoundComplete() {
+            if (!matches || matches.length === 0) return;
+            
+            const allCompleted = matches.every(m => m && m.completed);
+            if (allCompleted) {
+                if (currentPhase === PhaseType.PHASE_B) {
+                    // B阶段当前轮次结束
+                    const currentRound = matches[0].round;
+                    
+                    if (currentRound === 1) {
+                        // 四分之一决赛结束，进入半决赛
+                        schedulePhaseBSemifinals();
+                    } else if (currentRound === 2) {
+                        // 半决赛结束，进入决赛
+                        schedulePhaseBFinal();
+                    } else if (currentRound === 3) {
+                        // 决赛结束，B阶段全部完成
+                        updateOperationStatus('阶段B比赛全部结束！请点击"结束赛季"查看最终结果');
+                        document.getElementById('endSeasonBtn').disabled = false;
+                        document.getElementById('startMatchBtn').disabled = true;
+                    }
+                } else {
+                    updateOperationStatus('本轮比赛全部结束，正在进行下一轮分组...');
+                    setTimeout(() => {
+                        scheduleNextRound();
+                    }, 1500);
+                }
+            }
+        }
+
+        // 安排阶段B半决赛（第2轮）
+        function schedulePhaseBSemifinals() {
+            // 找出四分之一决赛获胜的4支队伍（未淘汰的B阶段队伍）
+            const semifinalists = teams.filter(t => t.qualified && !t.eliminated);
+            
+            if (semifinalists.length !== 4) {
+                alert(`错误：应该有4支队伍进入半决赛，但实际有${semifinalists.length}支`);
+                return;
+            }
+
+            // 随机配对：4支队伍分成2场半决赛
+            const shuffled = [...semifinalists].sort(() => Math.random() - 0.5);
+
+            matches = [];
+            for (let i = 0; i < shuffled.length; i += 2) {
+                if (i + 1 < shuffled.length) {
+                    matches.push({
+                        team1: shuffled[i],
+                        team2: shuffled[i + 1],
+                        games: [],
+                        currentGame: 0,
+                        team1Score: 0,
+                        team2Score: 0,
+                        completed: false,
+                        winner: null,
+                        phase: PhaseType.PHASE_B,
+                        round: 2 // 第2轮：半决赛
+                    });
+                }
+            }
+
+            updateSchedulePanel();
+            updateResultPanel();
+            updateOperationStatus('四分之一决赛结束！半决赛配对完成（4进2），点击"进行下一场比赛"开始半决赛');
+            document.getElementById('startMatchBtn').disabled = false;
+        }
+
+        // 安排阶段B决赛（第3轮）
+        function schedulePhaseBFinal() {
+            // 找出半决赛获胜的2支队伍（未淘汰的B阶段队伍）
+            const finalists = teams.filter(t => t.qualified && !t.eliminated);
+            
+            if (finalists.length !== 2) {
+                alert(`错误：应该有2支队伍进入决赛，但实际有${finalists.length}支`);
+                return;
+            }
+
+            matches = [{
+                team1: finalists[0],
+                team2: finalists[1],
+                games: [],
+                currentGame: 0,
+                team1Score: 0,
+                team2Score: 0,
+                completed: false,
+                winner: null,
+                phase: PhaseType.PHASE_B,
+                round: 3 // 第3轮：决赛
+            }];
+
+            updateSchedulePanel();
+            updateResultPanel();
+            updateOperationStatus('半决赛结束！决赛配对完成（2进1），点击"进行下一场比赛"开始决赛');
+            document.getElementById('startMatchBtn').disabled = false;
+        }
+
+        // 更新赛况面板
+        function updateMatchPanel() {
+            const container = document.getElementById('matchContent');
+
+            if (!container) return;
+
+            if (!currentMatch || !currentMatch.team1 || !currentMatch.team2) {
+                container.innerHTML = '<p class="status-message info">等待比赛开始...</p>';
+                return;
+            }
+
+            let html = `
+                <div class="current-match-header">
+                    <div class="match-id-display">${currentSeason}${currentPhase === PhaseType.PHASE_A ? 'A' : 'B'}-${currentMatch.matchNumber}</div>
+                    <div class="match-teams-header">
+                        <span class="team-name-left">${currentMatch.team1.name}</span>
+                        <span class="vs-text">VS</span>
+                        <span class="team-name-right">${currentMatch.team2.name}</span>
+                    </div>
+                    <div class="score-display-large">
+                        ${currentMatch.team1Score} - ${currentMatch.team2Score}
+                    </div>
+                </div>
+            `;
+
+            if (currentMatch.games && currentMatch.games.length > 0) {
+                html += '<div class="game-detail-list">';
+
+                currentMatch.games.forEach((game) => {
+                    if (!game || !game.winner) return;
+
+                    const isTeam1Winner = game.winner.id === currentMatch.team1.id;
+                    const upsetClass = game.isUpset ? 'upset' : '';
+                    const defenseClass = (game.team1DefenseMode || game.team2DefenseMode) ? 'defense-mode' : '';
+
+                    // 以弱胜强角标放在胜者一侧
+                    const team1UpsetBadge = (game.isUpset && isTeam1Winner) ? '<span class="upset-badge">以弱胜强</span>' : '';
+                    const team2UpsetBadge = (game.isUpset && !isTeam1Winner) ? '<span class="upset-badge">以弱胜强</span>' : '';
+
+                    // 守备模式角标放在守备方一侧
+                    const team1DefenseBadge = game.team1DefenseMode ? '<span class="defense-badge">守备模式</span>' : '';
+                    const team2DefenseBadge = game.team2DefenseMode ? '<span class="defense-badge">守备模式</span>' : '';
+
+                    // 守备模式详细信息
+                    let defenseModeInfo = '';
+                    if (game.team1DefenseMode || game.team2DefenseMode) {
+                        const defenseTeam = game.team1DefenseMode ? currentMatch.team1.name : currentMatch.team2.name;
+                        const defenseBonusPercent = game.team1DefenseMode ? Math.round(game.team1DefenseBonusPercent) : Math.round(game.team2DefenseBonusPercent);
+                        defenseModeInfo = `
+                            <div style="margin-top: 8px; padding: 6px; background: #f3e5f5; border-radius: 4px; font-size: 10px; color: #7b1fa2; text-align: center;">
+                                <strong>守备模式激活</strong> - ${defenseTeam} 获得 ${defenseBonusPercent}% 额外战力加成（每回合衰减3%-5%）
+                            </div>
+                        `;
+                    }
+
+                    html += `
+                        <div class="game-detail-card ${upsetClass} ${defenseClass}">
+                            <div class="game-header">
+                                <span class="game-number">第 ${game.gameNumber} 局</span>
+                                <span class="game-score-display">${game.currentScore}</span>
+                            </div>
+
+                            <div class="game-teams-comparison">
+                                <div class="team-power-detail left">
+                                    <div class="team-name-power" style="color: ${isTeam1Winner ? '#2e7d32' : '#c62828'}">
+                                        ${currentMatch.team1.name}
+                                    </div>
+                                    <div class="power-breakdown">
+                                        <span>基础战力: ${game.team1BasePower}</span>
+                                        ${generateBreakdownHTML(game.team1Breakdown, game.team1BasePower)}
+                                        <span style="font-weight: 600; color: #2196F3;">最终战力: ${game.team1FinalPower}</span>
+                                    </div>
+                                    <div class="game-badges">
+                                        ${team1UpsetBadge}
+                                        ${team1DefenseBadge}
+                                    </div>
+                                </div>
+
+                                <div class="vs-divider">VS</div>
+
+                                <div class="team-power-detail right">
+                                    <div class="team-name-power" style="color: ${!isTeam1Winner ? '#2e7d32' : '#c62828'}">
+                                        ${currentMatch.team2.name}
+                                    </div>
+                                    <div class="power-breakdown">
+                                        <span>基础战力: ${game.team2BasePower}</span>
+                                        ${generateBreakdownHTML(game.team2Breakdown, game.team2BasePower)}
+                                        <span style="font-weight: 600; color: #f44336;">最终战力: ${game.team2FinalPower}</span>
+                                    </div>
+                                    <div class="game-badges">
+                                        ${team2UpsetBadge}
+                                        ${team2DefenseBadge}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="power-bar-container">
+                                <div class="power-bar-modern">
+                                    <div class="power-fill-blue" style="width: ${game.team1WinRate}%">
+                                        ${game.team1WinRate}%
+                                    </div>
+                                    <div class="power-fill-red" style="width: ${game.team2WinRate}%">
+                                        ${game.team2WinRate}%
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="game-winner-row">
+                                <div class="game-winner-indicator ${isTeam1Winner ? 'winner' : 'loser'}">
+                                    ${isTeam1Winner ? '✓ 本局获胜' : '✗ 本局失利'}
+                                </div>
+                                <div class="game-winner-indicator ${!isTeam1Winner ? 'winner' : 'loser'}">
+                                    ${!isTeam1Winner ? '✓ 本局获胜' : '✗ 本局失利'}
+                                </div>
+                            </div>
+                            ${defenseModeInfo}
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        // 生成增益明细HTML
+        function generateBreakdownHTML(breakdown, basePower) {
+            if (!breakdown || breakdown.length === 0) {
+                return '<span>额外战力: +0 (0%)</span>';
+            }
+
+            let totalBonusPower = 0;
+            let totalBonusPercent = 0;
+            let html = '';
+
+            breakdown.forEach(item => {
+                const percentInt = Math.round(item.percent);
+                html += `<span style="color: ${item.decay ? '#9C27B0' : '#4CAF50'};">${item.label}: +${item.power} (${percentInt}%)</span>`;
+                totalBonusPower += item.power;
+                totalBonusPercent += item.percent;
+            });
+
+            const totalPercentInt = Math.round(totalBonusPercent);
+            html += `<span style="font-weight: 600; color: #FF9800;">合计额外战力: +${totalBonusPower} (${totalPercentInt}%)</span>`;
+
+            return html;
+        }
+
+        // 生成数据分析HTML
+        function generateAnalyticsHTML() {
+            if (!currentMatch || !currentMatch.games || currentMatch.games.length === 0) return '';
+
+            const games = currentMatch.games;
+            const totalGames = games.length;
+            const team1Wins = games.filter(g => g && g.winner && g.winner.id === currentMatch.team1.id).length;
+            const team2Wins = games.filter(g => g && g.winner && g.winner.id === currentMatch.team2.id).length;
+            const upsets = games.filter(g => g && g.isUpset).length;
+
+            let avgPowerDiff = 0;
+            games.forEach(g => {
+                if (g) {
+                    const diff = Math.abs((g.team1FinalPower || 0) - (g.team2FinalPower || 0));
+                    avgPowerDiff += diff;
+                }
+            });
+            avgPowerDiff = totalGames > 0 ? Math.round(avgPowerDiff / totalGames) : 0;
+
+            let maxPowerDiff = 0;
+            games.forEach(g => {
+                if (g) {
+                    const diff = Math.abs((g.team1FinalPower || 0) - (g.team2FinalPower || 0));
+                    if (diff > maxPowerDiff) maxPowerDiff = diff;
+                }
+            });
+
+            let avgWinRateDeviation = 0;
+            games.forEach(g => {
+                if (g && g.team1WinRate) {
+                    const deviation = Math.abs(parseFloat(g.team1WinRate) - 50);
+                    avgWinRateDeviation += deviation;
+                }
+            });
+            avgWinRateDeviation = totalGames > 0 ? (avgWinRateDeviation / totalGames).toFixed(1) : '0.0';
+
+            return `
+                <div class="analytics-section">
+                    <h4>本场数据分析</h4>
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <div class="analytics-value">${totalGames}</div>
+                            <div class="analytics-label">已进行局数</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-value">${upsets}</div>
+                            <div class="analytics-label">以弱胜强次数</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-value">${avgPowerDiff}</div>
+                            <div class="analytics-label">平均战力差</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-value">${maxPowerDiff}</div>
+                            <div class="analytics-label">最大战力差</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-value">${avgWinRateDeviation}%</div>
+                            <div class="analytics-label">平均胜率偏差</div>
+                        </div>
+                        <div class="analytics-card">
+                            <div class="analytics-value">${team1Wins}:${team2Wins}</div>
+                            <div class="analytics-label">小局比分</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 获取队伍的名次标签 - 严格遵守赛制规则（16进8，8进4进2进1）
+        function getTeamRankLabel(team) {
+            // 检查B阶段是否全部结束（赛季结束）
+            const allMatchesCompleted = matches.length > 0 && matches.every(m => m && m.completed);
+            const phaseBAllCompleted = currentPhase === PhaseType.PHASE_B && allMatchesCompleted;
+            
+            if (currentPhase === PhaseType.PHASE_A) {
+                // A阶段不显示任何特殊标签
+                return null;
+            }
+            
+            // B阶段 - 赛季已结束，显示最终名次
+            if (phaseBAllCompleted) {
+                // 冠军：6胜且未被淘汰（A阶段可能有0-2败）
+                if (team.wins === 6 && !team.eliminated) {
+                    return { label: '冠军', type: 'champion' };
+                }
+                
+                // 亚军：5胜且被淘汰（A阶段可能有0-2败，B阶段决赛1败）
+                if (team.wins === 5 && team.eliminated) {
+                    return { label: '亚军', type: 'runnerUp' };
+                }
+                
+                // 四强：4胜且被淘汰（半决赛败者）
+                if (team.wins === 4 && team.eliminated) {
+                    return { label: '四强', type: 'top4' };
+                }
+                
+                // 八强：3胜且被淘汰（B阶段四分之一决赛败者）
+                if (team.qualified && team.wins === 3 && team.eliminated) {
+                    return { label: '八强', type: 'top8' };
+                }
+                
+                // 十六强：A阶段被淘汰的队伍
+                if (team.eliminated && !team.qualified) {
+                    return { label: '十六强', type: 'top16' };
+                }
+            } else {
+                // B阶段进行中 - 根据实际战绩显示名次
+                // A阶段被淘汰的队伍显示"十六强"
+                if (team.eliminated && !team.qualified) {
+                    return { label: '十六强', type: 'top16' };
+                }
+                
+                // B阶段被淘汰的队伍根据胜场数显示相应名次
+                if (team.eliminated && team.qualified) {
+                    if (team.wins === 5) {
+                        // 决赛败者
+                        return { label: '亚军', type: 'runnerUp' };
+                    } else if (team.wins === 4) {
+                        // 半决赛败者
+                        return { label: '四强', type: 'top4' };
+                    } else if (team.wins === 3) {
+                        // 四分之一决赛败者
+                        return { label: '八强', type: 'top8' };
+                    }
+                }
+                
+                // 其他情况不显示标签，等待赛季结束
+            }
+            
+            return null;
+        }
+
+        // 查找冠军 - B阶段全胜的队伍（总战绩6胜，未被淘汰）
+        function findChampion() {
+            // 冠军：A阶段3胜 + B阶段3胜（四分之一决赛+半决赛+决赛）= 6胜
+            // A阶段可能有0-2败，所以总败场可能是0-2，关键是未被淘汰
+            const candidates = teams.filter(t => t && t.wins === 6 && !t.eliminated);
+            return candidates.length > 0 ? candidates[0] : null;
+        }
+        
+        // 查找亚军 - B阶段决赛失败者（总战绩5胜，已被淘汰）
+        function findRunnerUp() {
+            // 亚军：A阶段3胜 + B阶段2胜1败 = 5胜
+            // A阶段可能有0-2败，B阶段1败（决赛），所以总败场可能是1-3
+            const candidates = teams.filter(t => t && t.wins === 5 && t.eliminated);
+            return candidates.length > 0 ? candidates[0] : null;
+        }
+
+        // 更新战力排行榜
+        function updatePowerRanking() {
+            const container = document.getElementById('teamContent');
+            const sortedTeams = [...teams].sort((a, b) => b.basePower - a.basePower);
+            
+            // 检查赛季是否已结束
+            const allMatchesCompleted = matches.length > 0 && matches.every(m => m && m.completed);
+            const phaseBAllCompleted = currentPhase === PhaseType.PHASE_B && allMatchesCompleted;
+            const seasonEnded = phaseBAllCompleted;
+            
+            // 找出真正的冠军
+            const champion = seasonEnded ? findChampion() : null;
+            
+            let html = '<div class="power-ranking-list">';
+            
+            sortedTeams.forEach((team, index) => {
+                const rankClass = index < 3 ? 'top-rank' : '';
+                
+                // 获取队伍的名次标签
+                const rankLabel = getTeamRankLabel(team);
+                
+                // 构建名称和名次标签
+                let nameLabel = team.name;
+                
+                // 冠军星标常显 - 显示所有获得冠军的赛季，格式为"★-1.2.3"
+                if (team.championCount > 0) {
+                    const seasonsStr = team.championSeasons.join('.');
+                    nameLabel += `<span class="champion-star">★-${seasonsStr}</span>`;
+                }
+                
+                // 亚军银星常显 - 显示所有获得亚军的赛季，格式为"☆-1.2.3"（与冠军星标同时显示）
+                if (team.runnerUpCount > 0) {
+                    const seasonsStr = team.runnerUpSeasons.join('.');
+                    nameLabel += `<span class="runner-up-star">☆-${seasonsStr}</span>`;
+                }
+                
+                // 显示其他名次标签（亚军、四强、八强等）
+                if (rankLabel) {
+                    nameLabel += ` <span style="color: ${getRankLabelColor(rankLabel.type)}; font-size: 10px;">[${rankLabel.label}]</span>`;
+                }
+                
+                html += `
+                    <div class="power-ranking-item ${rankClass}">
+                        <span class="rank-number">#${index + 1}</span>
+                        <span class="team-name-with-champion">${nameLabel}</span>
+                        <span class="power-value">${team.basePower}</span>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        // 获取名次标签的颜色
+        function getRankLabelColor(type) {
+            switch(type) {
+                case 'champion': return '#FFD700'; // 金色
+                case 'runnerUp': return '#C0C0C0'; // 银色
+                case 'finalist': return '#9C27B0'; // 紫色
+                case 'top4': return '#2196F3'; // 蓝色
+                case 'top8': return '#FF9800'; // 橙色
+                case 'top16': return '#9E9E9E'; // 灰色
+                default: return '#666';
+            }
+        }
+
+        // 更新结果面板
+        function updateResultPanel() {
+            if (!teams || teams.length === 0) return;
+
+            // 切换A/B阶段显示
+            const phaseAResults = document.getElementById('phaseAResults');
+            const phaseBResults = document.getElementById('phaseBResults');
+            
+            if (currentPhase === PhaseType.PHASE_A) {
+                if (phaseAResults) phaseAResults.style.display = 'block';
+                if (phaseBResults) phaseBResults.style.display = 'none';
+                updatePhaseAResults();
+            } else {
+                if (phaseAResults) phaseAResults.style.display = 'none';
+                if (phaseBResults) phaseBResults.style.display = 'block';
+                updatePhaseBResults();
+            }
+        }
+
+        // 更新A阶段结果
+        function updatePhaseAResults() {
+            // 阶段A：3胜晋级，3败淘汰（16进8）
+            teams.forEach(team => {
+                if (team) {
+                    if (team.wins >= 3 && !team.qualified) {
+                        team.qualified = true;
+                    }
+                    if (team.losses >= 3 && !team.eliminated) {
+                        team.eliminated = true;
+                    }
+                }
+            });
+
+            const qualifiedContainer = document.getElementById('qualifiedTeams');
+            const undecidedContainer = document.getElementById('undecidedTeams');
+            const eliminatedContainer = document.getElementById('eliminatedTeams');
+
+            if (!qualifiedContainer || !undecidedContainer || !eliminatedContainer) return;
+
+            const qualified = teams.filter(t => t && t.qualified && t.wins === 3);
+            const undecided = teams.filter(t => t && !t.qualified && !t.eliminated);
+            const eliminated = teams.filter(t => t && t.eliminated);
+            
+            // 按胜场数降序排列
+            const sortedQualified = [...qualified].sort((a, b) => {
+                if (b.wins !== a.wins) return b.wins - a.wins;
+                return a.losses - b.losses;
+            });
+            
+            const sortedUndecided = [...undecided].sort((a, b) => {
+                if (b.wins !== a.wins) return b.wins - a.wins;
+                return a.losses - b.losses;
+            });
+            
+            const sortedEliminated = [...eliminated].sort((a, b) => {
+                if (b.wins !== a.wins) return b.wins - a.wins;
+                return a.losses - b.losses;
+            });
+
+            const qualifiedTitle = document.getElementById('qualifiedTitle');
+            if (qualifiedTitle) {
+                qualifiedTitle.textContent = '已晋级阶段B (3胜)';
+            }
+
+            qualifiedContainer.innerHTML = sortedQualified.map(team => `
+                <div class="result-team-item qualified">
+                    <span class="result-team-name">${team.name}</span>
+                    <span class="result-team-record">${team.wins}胜${team.losses}败</span>
+                </div>
+            `).join('') || '<p style="text-align: center; color: #999; font-size: 12px; padding: 8px;">暂无</p>';
+
+            undecidedContainer.innerHTML = sortedUndecided.map(team => `
+                <div class="result-team-item">
+                    <span class="result-team-name">${team.name}</span>
+                    <span class="result-team-record">${team.wins}胜${team.losses}败</span>
+                </div>
+            `).join('') || '<p style="text-align: center; color: #999; font-size: 12px; padding: 8px;">暂无</p>';
+
+            eliminatedContainer.innerHTML = sortedEliminated.map(team => `
+                <div class="result-team-item eliminated">
+                    <span class="result-team-name">${team.name}</span>
+                    <span class="result-team-record">${team.wins}胜${team.losses}败</span>
+                </div>
+            `).join('') || '<p style="text-align: center; color: #999; font-size: 12px; padding: 8px;">暂无</p>';
+        }
+
+        // 更新B阶段结果 - 严格的1-1-2-4-8布局，不显示胜负记录
+        function updatePhaseBResults() {
+            const championContainer = document.getElementById('championTeams');
+            const runnerUpContainer = document.getElementById('runnerUpTeams');
+            const top4Container = document.getElementById('top4Teams');
+            const top8Container = document.getElementById('top8Teams');
+            const top16Container = document.getElementById('top16Teams');
+            const championSection = document.getElementById('championSection');
+            const runnerUpSection = document.getElementById('runnerUpSection');
+            const top4Section = document.getElementById('top4Section');
+            const top8Section = document.getElementById('top8Section');
+            const top16Section = document.getElementById('top16Section');
+            const championTitle = document.getElementById('championTitle');
+
+            if (!championContainer || !runnerUpContainer || !top4Container || !top8Container || !top16Container) return;
+
+            // 检查B阶段是否已开始
+            const phaseBMatchesStarted = completedMatches.some(m => m && m.phase === PhaseType.PHASE_B);
+            const allMatchesCompleted = matches.length > 0 && matches.every(m => m && m.completed);
+            
+            // 分类队伍 - 严格按照B阶段淘汰赛制（8→4→2→1）
+            let champions = [];
+            let runnerUps = [];
+            let top4Teams = [];
+            let top8Teams = [];
+            
+            // 获取所有已晋级B阶段的队伍（qualified标志在startPhaseB中设置）
+            const qualifiedBTeams = teams.filter(t => t && t.qualified);
+            // 获取在B阶段未被淘汰的队伍
+            const activeBTeams = qualifiedBTeams.filter(t => !t.eliminated);
+            // 获取在B阶段已被淘汰的队伍
+            const eliminatedBTeams = qualifiedBTeams.filter(t => t.eliminated);
+            
+            if (allMatchesCompleted && phaseBMatchesStarted) {
+                // B阶段全部结束 - 使用精确的胜负判定
+                // 冠军：6胜且未被淘汰（A阶段可能有0-2败）
+                const champion = findChampion();
+                if (champion) champions = [champion];
+                
+                // 亚军：5胜且被淘汰（A阶段可能有0-2败，B阶段决赛1败）
+                const runnerUp = findRunnerUp();
+                if (runnerUp) runnerUps = [runnerUp];
+                
+                // 四强：4胜且被淘汰（半决赛败者）
+                top4Teams = teams.filter(t => t && t.qualified && t.wins === 4 && t.eliminated && 
+                    !(champion && t.id === champion.id) && 
+                    !(runnerUp && t.id === runnerUp.id)
+                ).slice(0, 4);
+                
+                // 八强：3胜且被淘汰（B阶段四分之一决赛败者）
+                top8Teams = teams.filter(t => t && t.qualified && t.wins === 3 && t.eliminated && 
+                    !(champion && t.id === champion.id) && 
+                    !(runnerUp && t.id === runnerUp.id) &&
+                    !top4Teams.some(t4 => t4.id === t.id)
+                ).slice(0, 4);
+            } else if (phaseBMatchesStarted) {
+                // B阶段进行中（已有B阶段比赛完成）
+                const quarterfinalMatches = completedMatches.filter(m => m && m.phase === PhaseType.PHASE_B && m.round === 1);
+                const semifinalMatches = completedMatches.filter(m => m && m.phase === PhaseType.PHASE_B && m.round === 2);
+                const finalMatches = completedMatches.filter(m => m && m.phase === PhaseType.PHASE_B && m.round === 3);
+                
+                // 找出决赛败者（亚军候选人）- 第3轮比赛的败者
+                const finalMatch = finalMatches.find(m => m && m.winner);
+                if (finalMatch) {
+                    const finalLoser = finalMatch.winner.id === finalMatch.team1.id ? finalMatch.team2 : finalMatch.team1;
+                    if (finalLoser) {
+                        runnerUps = [finalLoser];
+                    }
+                }
+                
+                // 冠军：决赛中获胜的队伍，或尚未被淘汰且赢了3场B阶段比赛的
+                const championCandidate = activeBTeams.find(t => t.wins === 6);
+                if (championCandidate) {
+                    champions = [championCandidate];
+                } else if (activeBTeams.length === 1 && finalMatches.length > 0) {
+                    // 决赛已结束但冠军还没被正确识别
+                    champions = activeBTeams.slice(0, 1);
+                }
+                
+                // 四强：半决赛败者（已被淘汰且wins=4），或当前存活的非决赛队伍
+                const semiFinalLosers = eliminatedBTeams.filter(t => t.wins === 4);
+                if (semiFinalLosers.length > 0) {
+                    top4Teams = semiFinalLosers.slice(0, 4);
+                } else if (semifinalMatches.length >= 2) {
+                    // 半决赛已结束，但队伍可能还没被标记为eliminated
+                    top4Teams = eliminatedBTeams.filter(t => t.wins >= 4).slice(0, 4);
+                }
+                
+                // 八强：四分之一决赛败者（已被淘汰且wins=3）
+                const quarterFinalLosers = eliminatedBTeams.filter(t => t.wins === 3 && !top4Teams.some(t4 => t4.id === t.id));
+                if (quarterFinalLosers.length > 0) {
+                    top8Teams = quarterFinalLosers.slice(0, 4);
+                } else if (quarterfinalMatches.length >= 4 && top4Teams.length === 0) {
+                    // 四分之一决赛已全部结束，但还没有四强
+                    top8Teams = eliminatedBTeams.slice(0, 4);
+                }
+            } else {
+                // B阶段还未开始（刚进入B阶段，没有B阶段比赛记录）
+                // 所有8支晋级队伍都在八强
+                top8Teams = qualifiedBTeams.slice(0, 8);
+            }
+
+            // 动态控制冠军栏标题
+            if (championTitle) {
+                if (allMatchesCompleted && champions.length === 1) {
+                    championTitle.textContent = '冠军';
+                } else if (phaseBMatchesStarted && !allMatchesCompleted && champions.length === 2) {
+                    championTitle.textContent = '二强';
+                } else if (phaseBMatchesStarted && !allMatchesCompleted && champions.length > 0) {
+                    championTitle.textContent = '决赛队伍';
+                } else {
+                    championTitle.textContent = '冠军';
+                }
+            }
+            
+            // 控制各区域显示 - 严格遵守1-1-4-8布局
+            if (championSection) {
+                championSection.style.display = champions.length > 0 ? 'block' : 'none';
+            }
+            if (runnerUpSection) {
+                runnerUpSection.style.display = runnerUps.length > 0 ? 'block' : 'none';
+            }
+            if (top4Section) {
+                top4Section.style.display = top4Teams.length > 0 ? 'block' : 'none';
+            }
+            if (top8Section) {
+                top8Section.style.display = top8Teams.length > 0 ? 'block' : 'none';
+            }
+
+            // 渲染冠军/决赛队伍（严格最多2个）- 不显示胜负记录
+            championContainer.innerHTML = champions.slice(0, 2).map(team => `
+                <div class="result-team-item qualified">
+                    <span class="result-team-name">${team.name}</span>
+                </div>
+            `).join('') || '<p style="text-align: center; color: #999; font-size: 12px; padding: 8px;">暂无</p>';
+
+            // 渲染亚军（严格1个）- 不显示胜负记录
+            runnerUpContainer.innerHTML = runnerUps.slice(0, 1).map(team => `
+                <div class="result-team-item playoffs">
+                    <span class="result-team-name">${team.name}</span>
+                </div>
+            `).join('') || '<p style="text-align: center; color: #999; font-size: 12px; padding: 8px;">暂无</p>';
+
+            // 渲染四强（严格4个）
+            top4Container.innerHTML = top4Teams.slice(0, 4).map(team => `
+                <div class="result-team-item">
+                    <span class="result-team-name">${team.name}</span>
+                </div>
+            `).join('') || '<p style="text-align: center; color: #999; font-size: 12px; padding: 8px;">暂无</p>';
+
+            // 渲染八强（严格4个，B阶段四分之一决赛败者）- 不显示胜负记录
+            top8Container.innerHTML = top8Teams.slice(0, 4).map(team => `
+                <div class="result-team-item">
+                    <span class="result-team-name">${team.name}</span>
+                </div>
+            `).join('') || '<p style="text-align: center; color: #999; font-size: 12px; padding: 8px;">暂无</p>';
+
+            // 渲染十六强（严格8个，A阶段被淘汰的队伍）- 不显示胜负记录
+            const top16TeamsList = teams.filter(t => t && t.eliminated && !t.qualified).slice(0, 8);
+            if (top16Section) {
+                top16Section.style.display = top16TeamsList.length > 0 ? 'block' : 'none';
+            }
+            top16Container.innerHTML = top16TeamsList.map(team => `
+                <div class="result-team-item">
+                    <span class="result-team-name">${team.name}</span>
+                </div>
+            `).join('') || '<p style="text-align: center; color: #999; font-size: 12px; padding: 8px;">暂无</p>';
+        }
+
+        // 更新队伍数据面板（表格形式）
+        function updateTeamDataPanel() {
+            const container = document.getElementById('teamDataContent');
+            if (!container || !teams || teams.length === 0) return;
+
+            // 检查赛季是否已结束
+            const allMatchesCompleted = matches.length > 0 && matches.every(m => m && m.completed);
+            const phaseBAllCompleted = currentPhase === PhaseType.PHASE_B && allMatchesCompleted;
+            const seasonEnded = phaseBAllCompleted;
+            
+            // 找出真正的冠军
+            const champion = seasonEnded ? findChampion() : null;
+
+            let html = '<table class="team-data-table">';
+            html += `
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>队伍</th>
+                        <th>大场胜率</th>
+                        <th>小局胜率</th>
+                        <th>以弱胜强</th>
+                        <th>荣誉记录</th>
+                        <th>赛季最高</th>
+                        <th>历史最高</th>
+                        <th>历史最低</th>
+                        <th>赛季变动</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+
+            // 按基础战力排序
+            const sortedTeams = [...teams].sort((a, b) => b.basePower - a.basePower);
+
+            sortedTeams.forEach((team, index) => {
+                // 计算大场胜率（历史累计，1位小数）
+                const matchWinRate = team.historicalTotalMatches > 0 ? 
+                    ((team.historicalMatchWins / team.historicalTotalMatches) * 100).toFixed(1) : '0.0';
+                // 计算小局胜率（历史累计，1位小数）
+                const gameWinRate = team.historicalTotalGames > 0 ? 
+                    ((team.historicalTotalWins / team.historicalTotalGames) * 100).toFixed(1) : '0.0';
+                // 以弱胜强次数（历史累计）
+                const upsetWinCount = team.historicalUpsetsWon > 0 ? `${team.historicalUpsetsWon}次` : '0次';
+                // 赛季变动 = 当前基础战力 - 本赛季初始战力
+                const seasonChange = team.basePower - (team.powerHistory.length > 0 ? team.powerHistory[0] : team.basePower);
+                const changeColor = seasonChange >= 0 ? '#2e7d32' : '#c62828';
+                const changeSign = seasonChange >= 0 ? '+' : '';
+                const rankClass = index < 3 ? 'top-rank' : '';
+                
+                // 构建荣誉记录字符串 "冠军-亚军-四强-八强-十六强"（历史累计）
+                const honorRecord = `${team.championCount}-${team.runnerUpCount}-${team.top4Count}-${team.top8Count}-${team.top16Count}`;
+                
+                // 构建队伍名称显示 - 冠军星标作为队名的一部分常显
+                let teamNameDisplay = team.name;
+                
+                // 冠军星标常显 - 显示所有获得冠军的赛季，格式为"★-1.2.3"
+                if (team.championCount > 0) {
+                    const seasonsStr = team.championSeasons.join('.');
+                    teamNameDisplay += `<span class="champion-star">★-${seasonsStr}</span>`;
+                }
+                
+                // 亚军银星常显 - 显示所有获得亚军的赛季，格式为"☆-1.2.3"（与冠军星标同时显示）
+                if (team.runnerUpCount > 0) {
+                    const seasonsStr = team.runnerUpSeasons.join('.');
+                    teamNameDisplay += `<span class="runner-up-star">☆-${seasonsStr}</span>`;
+                }
+                
+                // 获取名次标签（仅赛季结束时显示）
+                const rankLabel = getTeamRankLabel(team);
+                if (rankLabel) {
+                    teamNameDisplay += ` <span style="color: ${getRankLabelColor(rankLabel.type)}; font-size: 10px;">[${rankLabel.label}]</span>`;
+                }
+
+                html += `
+                    <tr class="${rankClass}">
+                        <td>#${index + 1}</td>
+                        <td>${teamNameDisplay}</td>
+                        <td>${matchWinRate}%</td>
+                        <td>${gameWinRate}%</td>
+                        <td>${upsetWinCount}</td>
+                        <td style="font-weight: 600; color: #2196F3;">${honorRecord}</td>
+                        <td>${team.seasonHighestPower}</td>
+                        <td>${team.highestPower}</td>
+                        <td>${team.lowestPower}</td>
+                        <td style="color: ${changeColor}; font-weight: 600;">${changeSign}${seasonChange}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // 更新历史面板
+        function updateHistoryPanel() {
+            const container = document.getElementById('historyContent');
+            const paginationEl = document.getElementById('historyPagination');
+
+            if (!container) return;
+
+            if (!completedMatches || completedMatches.length === 0) {
+                container.innerHTML = '<p class="status-message info">暂无比赛记录</p>';
+                if (paginationEl) paginationEl.style.display = 'none';
+                return;
+            }
+
+            if (paginationEl) paginationEl.style.display = 'flex';
+            
+            const totalPages = Math.ceil(completedMatches.length / historyPageSize);
+            if (historyCurrentPage > totalPages) {
+                historyCurrentPage = totalPages;
+            }
+            
+            const startIndex = (historyCurrentPage - 1) * historyPageSize;
+            const endIndex = Math.min(startIndex + historyPageSize, completedMatches.length);
+            const pageMatches = completedMatches.slice(startIndex, endIndex).reverse();
+
+            const pageInfoEl = document.getElementById('pageInfo');
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            
+            if (pageInfoEl) pageInfoEl.textContent = `${historyCurrentPage}/${totalPages}`;
+            if (prevBtn) prevBtn.disabled = historyCurrentPage <= 1;
+            if (nextBtn) nextBtn.disabled = historyCurrentPage >= totalPages;
+
+            let html = '<div class="history-list">';
+
+            pageMatches.forEach(match => {
+                if (!match || !match.team1 || !match.team2 || !match.winner) return;
+                
+                const isTeam1Winner = match.winner.id === match.team1.id;
+                const phaseLabel = match.phase === PhaseType.PHASE_B ? 'B' : 'A';
+                const matchId = `${match.season}${phaseLabel}-${match.matchNumber}`;
+                
+                html += `
+                    <div class="history-match-card">
+                        <span class="history-season-tag">第${match.season}赛季</span>
+                        <div class="history-match-header">
+                            <span class="history-match-number">${matchId}</span>
+                        </div>
+                        <div class="history-match-teams">
+                            <span class="history-team ${isTeam1Winner ? 'winner' : 'loser'}">
+                                ${match.team1.name}
+                            </span>
+                            <span class="history-score">${match.team1Score} - ${match.team2Score}</span>
+                            <span class="history-team ${!isTeam1Winner ? 'winner' : 'loser'}">
+                                ${match.team2.name}
+                            </span>
+                        </div>
+                        <div class="history-games-summary">
+                            战绩: ${match.team1.name} (${match.team1.wins}胜${match.team1.losses}败) | 
+                            ${match.team2.name} (${match.team2.wins}胜${match.team2.losses}败)
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // 切换历史页
+        function changeHistoryPage(delta) {
+            const totalPages = Math.ceil(completedMatches.length / historyPageSize);
+            const newPage = historyCurrentPage + delta;
+            
+            if (newPage >= 1 && newPage <= totalPages) {
+                historyCurrentPage = newPage;
+                updateHistoryPanel();
+            }
+        }
+
+        // 结束赛季
+        function endSeason() {
+            // 找出冠军、亚军 - 使用精确的胜负判定
+            const champion = findChampion();
+            const runnerUp = findRunnerUp();
+            
+            // 四强：进入过B阶段（qualified=true）且是半决赛败者（4胜）的队伍
+            const top4 = teams.filter(t => t && t.qualified && t.wins === 4 && 
+                !(champion && t.id === champion.id) && 
+                !(runnerUp && t.id === runnerUp.id)
+            );
+            
+            // 八强：B阶段四分之一决赛败者（qualified=true，wins=3，即只赢了A阶段）
+            const top8 = teams.filter(t => t && t.qualified && t.wins === 3 && 
+                !(champion && t.id === champion.id) && 
+                !(runnerUp && t.id === runnerUp.id) &&
+                !top4.some(t4 => t4.id === t.id)
+            );
+
+            // 冠军（6胜0-1败）
+            if (champion) {
+                champion.championCount++;
+                champion.championSeasons.push(currentSeason); // 记录获得冠军的赛季
+                champion.basePower += 15;
+            }
+
+            // 亚军（5胜1-2败）
+            if (runnerUp) {
+                runnerUp.runnerUpCount++;
+                runnerUp.runnerUpSeasons.push(currentSeason); // 记录获得亚军的赛季
+                runnerUp.basePower += 10;
+            }
+
+            // 4强（半决赛败者，最多4个）
+            top4.slice(0, 4).forEach(team => {
+                team.top4Count++;
+                team.basePower += 8;
+            });
+
+            // 8强（B阶段四分之一决赛败者，最多4个）
+            top8.slice(0, 4).forEach(team => {
+                team.top8Count++;
+                team.basePower += 4;
+            });
+
+            // 16强（A阶段被淘汰的队伍，最多8个）
+            const top16 = teams.filter(t => t && t.eliminated && !t.qualified);
+            top16.slice(0, 8).forEach(team => {
+                team.top16Count++;
+                team.basePower += 2;
+            });
+
+            updateOperationStatus(`第${currentSeason}赛季结束！冠军: ${champion?.name || '未知'}`);
+            updatePowerRanking();
+            updateTeamDataPanel();
+            updateResultPanel();
+
+            document.getElementById('endSeasonBtn').disabled = true;
+            document.getElementById('startMatchBtn').disabled = true;
+
+            // 询问是否进入下赛季
+            setTimeout(() => {
+                if (confirm(`第${currentSeason}赛季已结束！\n\n是否进入第${currentSeason + 1}赛季？`)) {
+                    startNextSeason();
+                }
+            }, 1000);
+        }
+
+        // 开始下一个赛季
+        function startNextSeason() {
+            currentSeason++;
+            currentPhase = PhaseType.PHASE_A;
+            currentState = GameState.GROUPING;
+
+            // 重置队伍状态但保留战力和历史累计统计
+            teams.forEach(team => {
+                team.wins = 0;
+                team.losses = 0;
+                team.qualified = false;
+                team.eliminated = false;
+                team.defenseModeActive = false;
+                team.defenseModeBonus = 0;
+                team.upsetBonus = 0;
+                team.totalGames = 0;
+                team.totalWins = 0;
+                team.totalMatches = 0;
+                team.matchWins = 0;
+                team.upsetsWon = 0;
+                team.upsetsLost = 0;
+                // 重置powerHistory，以当前战力作为新赛季的起点
+                team.powerHistory = [team.basePower];
+                team.seasonHighestPower = team.basePower;
+                // historicalTotalGames, historicalTotalWins, historicalTotalMatches, 
+                // historicalMatchWins, historicalUpsetsWon 保留不清空
+            });
+
+            matches = [];
+            currentMatch = null;
+            completedMatches = []; // 清空当前赛季的比赛记录
+            historyCurrentPage = 1;
+            // 新赛季的计数器从0开始
+            seasonMatchCounters[currentSeason] = 0;
+            
+            // allSeasonMatches 保留，不清空 - 用于跨赛季历史统计
+
+            updatePhaseDisplay();
+            updatePowerRanking();
+            updateTeamDataPanel();
+            updateResultPanel();
+            updateSchedulePanel();
+            updateHistoryPanel();
+
+            // 自动生成新的随机分组
+            generateRandomMatches();
+            updateOperationStatus(`第${currentSeason}赛季开始！已自动分组，请点击确认开始比赛`);
+            document.getElementById('confirmBtn').disabled = false;
+        }
+
+        // 初始化
+        window.onload = function() {
+            initTeams();
+            updatePhaseDisplay();
+        };
+    </script>
+</body>
+</html>
